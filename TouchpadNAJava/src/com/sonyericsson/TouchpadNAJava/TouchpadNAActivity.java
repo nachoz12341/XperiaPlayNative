@@ -33,25 +33,38 @@ import android.os.Bundle;
 import android.util.Log;
 
 public class TouchpadNAActivity extends NativeActivity {
+    static int pos_x=0;
+    static int pos_y=0;
+
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        Log.i("yoyo", "ON CREATE!!!!!!!!!!!!!");
         RegisterThis();
     }
 
     public boolean OnNativeMotion( int action, int x, int y, int source, int device_id ) {
-    	Log.i("TouchpadNAJava", "Received native motion event! (" + x + ", " + y + ")");
+    	Log.i("yoyo", "Received native motion event! (" + x + ", " + y + ")");
+        pos_x=x;
+        pos_y=y;
     	return true;
     }
 
-    /*
-     * Add more callbacks if needed (keys, sensors etc)
-     * 
-     */
+    public static double GetPosX()
+    {
+        return pos_x;
+    }
+
+    public static double GetPosY()
+    {
+        return pos_y;
+    }
 
     native int RegisterThis();
+
+    public static native double TestLink();
 
     static {
         System.loadLibrary("touchpadndkjava");

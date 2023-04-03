@@ -42,7 +42,7 @@
 
 #include <android/log.h>
 
-#define TAG "TouchpadNDK"
+#define TAG "yoyo"
 #define LOGI(...) ((void)__android_log_print( ANDROID_LOG_INFO, TAG, __VA_ARGS__ ))
 #define LOGW(...) ((void)__android_log_print( ANDROID_LOG_WARN, TAG, __VA_ARGS__ ))
 #define LOGE(...) ((void)__android_log_print( ANDROID_LOG_ERROR, TAG, __VA_ARGS__ ))
@@ -726,9 +726,15 @@ static
 int
 RegisterThis( JNIEnv* env, jobject clazz )
 {
-	g_pActivity = (jobject)(*env)->NewGlobalRef( env, clazz );
-
+	LOGI("NativeActivity register function");
+	g_pActivity = (jobject)(*env)->NewGlobalRef( env, clazz );	
 	return 0;
+}
+
+JNIEXPORT jdouble JNICALL 
+Java_com_sonyericsson_TouchpadNAJava_TouchpadNAActivity_TestLink(JNIEnv *env, jclass c1)
+{
+	return 420.0;
 }
 
 
@@ -748,6 +754,8 @@ JNI_OnLoad( JavaVM * vm, void * reserved )
 		LOGE("%s - Failed to get the environment using GetEnv()", __FUNCTION__);
 		return -1;
 	}
+	else
+		LOGI( "%s - get env", __FUNCTION__ );
 
 	const char* interface_path = "com/sonyericsson/TouchpadNAJava/TouchpadNAActivity";
 	jclass java_activity_class = (*env)->FindClass( env, interface_path );
@@ -757,12 +765,16 @@ JNI_OnLoad( JavaVM * vm, void * reserved )
 		LOGE( "%s - Failed to get %s class reference", __FUNCTION__, interface_path );
 		return -1;
 	}
+	else
+		LOGI( "%s - class reference", __FUNCTION__ );
 
     if( (*env)->RegisterNatives( env, java_activity_class, activity_methods, NUM_METHODS(activity_methods) ) != JNI_OK )
     {
 		LOGE( "%s - Failed to register native activity methods", __FUNCTION__ );
 		return -1;
 	}
+	else
+		LOGI( "%s - register native activity methods", __FUNCTION__ );
 
 	javaOnNDKTouch	= (*env)->GetMethodID( env, java_activity_class, "OnNativeMotion", "(IIIII)Z");
 	if( !javaOnNDKTouch )
@@ -774,6 +786,8 @@ JNI_OnLoad( JavaVM * vm, void * reserved )
 		}
 		return JNI_FALSE;
 	}
+	else
+		LOGI( "%s - On Native Motion register", __FUNCTION__ );
 
 	LOGI( "%s - Complete", __FUNCTION__ );
 
