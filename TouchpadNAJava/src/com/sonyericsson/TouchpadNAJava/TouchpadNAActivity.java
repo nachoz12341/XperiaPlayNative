@@ -28,6 +28,9 @@
 
 package com.sonyericsson.TouchpadNAJava;
 
+import ${YYAndroidPackageName}.RunnerActivity;
+
+import android.view.Window;
 import android.app.NativeActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -43,10 +46,12 @@ public class TouchpadNAActivity extends NativeActivity {
         super.onCreate(savedInstanceState);
         Log.i("yoyo", "ON CREATE!!!!!!!!!!!!!");
         RegisterThis();
+        getWindow().takeSurface( null );
+        RunnerActivity.CurrentActivity.setupView();
     }
 
     public boolean OnNativeMotion( int action, int x, int y, int source, int device_id ) {
-    	Log.i("yoyo", "Received native motion event! (" + x + ", " + y + ")");
+    	Log.i("yoyo", "Received native motion event! (" + x + ", " + y + ", " + source + ", " + device_id + ")");
         pos_x=x;
         pos_y=y;
     	return true;
@@ -65,6 +70,7 @@ public class TouchpadNAActivity extends NativeActivity {
     native int RegisterThis();
 
     public static native double TestLink();
+    public static native double StartInputQueue();
 
     static {
         System.loadLibrary("touchpadndkjava");

@@ -237,10 +237,11 @@ instance_app_main( struct APP_INSTANCE* app_instance )
 	engine.app				= app_instance;
 
 	int run = 1;
-
+	LOGI( "Main pre loop");
 	// our 'main loop'
 	while( run == 1 )
 	{
+		LOGI( "Main loop start");
 		// Read all pending events.
 		int msg_index;
 		int ident;
@@ -251,6 +252,7 @@ instance_app_main( struct APP_INSTANCE* app_instance )
 
 		for( msg_index = 0; msg_index < app_instance->msgQueueLength; ++msg_index )
 		{
+			LOGI( "Main msg for loop");
 			switch( app_instance->msgQueue[msg_index].msg )
 			{
 				case MSG_APP_START:
@@ -324,15 +326,18 @@ instance_app_main( struct APP_INSTANCE* app_instance )
 		app_instance->msgQueueLength = 0;
 
 		app_unlock_queue( app_instance );
-
+		LOGI( "Main pre break");
 		if (!run)
 			break;
+		LOGI( "Main post break");
 
 		// If not rendering, we will block forever waiting for events.
 		// If rendering, we loop until all events are read, then continue
 		// to draw the next frame.
+		
 		while( (ident = ALooper_pollAll( 250, NULL, &events, (void**)&source )) >= 0 )
 		{
+			LOGI( "Main event loop start");
 			if( ident == LOOPER_ID_INPUT )
 			{
 				AInputEvent* event = NULL;
@@ -357,221 +362,6 @@ instance_app_main( struct APP_INSTANCE* app_instance )
 ///////////////////////
 ///////////////////////
 ///////////////////////
-
-
-
-///////////////
-static
-void
-OnDestroy( ANativeActivity* activity )
-{
-	LOGI( "NativeActivity destroy: %p\n", activity );
-
-	struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)activity->instance;
-
-	pthread_mutex_lock( &app_instance->mutex );
-
-	app_instance->msgQueue[ app_instance->msgQueueLength++ ].msg = MSG_APP_DESTROYED;
-
-	while( !app_instance->destroyed )
-	{
-		LOGI( "NativeActivity destroy waiting on app thread" );
-		pthread_cond_wait(&app_instance->cond, &app_instance->mutex);
-	}
-
-	pthread_mutex_unlock( &app_instance->mutex );
-}
-
-static
-void
-OnStart( ANativeActivity* activity )
-{
-	LOGI( "NativeActivity start: %p\n", activity );
-
-	struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)activity->instance;
-
-	pthread_mutex_lock( &app_instance->mutex );
-
-	app_instance->pendingActivityState = APP_STATE_START;
-	app_instance->msgQueue[ app_instance->msgQueueLength++ ].msg = MSG_APP_START;
-
-	while( app_instance->activityState != app_instance->pendingActivityState )
-	{
-		pthread_cond_wait(&app_instance->cond, &app_instance->mutex);
-	}
-
-	app_instance->pendingActivityState = APP_STATE_NONE;
-
-	pthread_mutex_unlock( &app_instance->mutex );
-}
-
-static
-void
-OnResume( ANativeActivity* activity )
-{
-	LOGI( "NativeActivity resume: %p\n", activity );
-
-	struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)activity->instance;
-
-	pthread_mutex_lock( &app_instance->mutex );
-
-	app_instance->pendingActivityState = APP_STATE_RESUME;
-	app_instance->msgQueue[ app_instance->msgQueueLength++ ].msg = MSG_APP_RESUME;
-
-	while( app_instance->activityState != app_instance->pendingActivityState )
-	{
-		pthread_cond_wait(&app_instance->cond, &app_instance->mutex);
-	}
-
-	app_instance->pendingActivityState = APP_STATE_NONE;
-
-	pthread_mutex_unlock( &app_instance->mutex );
-}
-
-static
-void*
-OnSaveInstanceState( ANativeActivity* activity, size_t* out_lentch )
-{
-	LOGI( "NativeActivity save instance state: %p\n", activity );
-
-	return 0;
-}
-
-static
-void
-OnPause( ANativeActivity* activity )
-{
-	LOGI( "NativeActivity pause: %p\n", activity );
-
-	struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)activity->instance;
-
-	pthread_mutex_lock( &app_instance->mutex );
-
-	app_instance->pendingActivityState = APP_STATE_PAUSE;
-	app_instance->msgQueue[ app_instance->msgQueueLength++ ].msg = MSG_APP_PAUSE;
-
-	while( app_instance->activityState != app_instance->pendingActivityState )
-	{
-		pthread_cond_wait(&app_instance->cond, &app_instance->mutex);
-	}
-
-	app_instance->pendingActivityState = APP_STATE_NONE;
-
-	pthread_mutex_unlock( &app_instance->mutex );
-}
-
-static
-void
-OnStop( ANativeActivity* activity )
-{
-	LOGI( "NativeActivity stop: %p\n", activity );
-
-	struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)activity->instance;
-
-	pthread_mutex_lock( &app_instance->mutex );
-
-	app_instance->pendingActivityState = APP_STATE_STOP;
-	app_instance->msgQueue[ app_instance->msgQueueLength++ ].msg = MSG_APP_STOP;
-
-	while( app_instance->activityState != app_instance->pendingActivityState )
-	{
-		pthread_cond_wait(&app_instance->cond, &app_instance->mutex);
-	}
-
-	app_instance->pendingActivityState = APP_STATE_NONE;
-
-	pthread_mutex_unlock( &app_instance->mutex );
-}
-
-static
-void
-OnConfigurationChanged( ANativeActivity* activity )
-{
-	LOGI( "NativeActivity configuration changed: %p\n", activity );
-
-	struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)activity->instance;
-
-	pthread_mutex_lock( &app_instance->mutex );
-
-	app_instance->msgQueue[ app_instance->msgQueueLength++ ].msg = MSG_APP_CONFIGCHANGED;
-
-	pthread_mutex_unlock( &app_instance->mutex );
-}
-
-static
-void
-OnLowMemory( ANativeActivity* activity )
-{
-	LOGI( "NativeActivity low memory: %p\n", activity );
-
-	struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)activity->instance;
-
-	pthread_mutex_lock( &app_instance->mutex );
-
-	app_instance->msgQueue[ app_instance->msgQueueLength++ ].msg = MSG_APP_CONFIGCHANGED;
-
-	pthread_mutex_unlock( &app_instance->mutex );
-}
-
-static
-void
-OnWindowFocusChanged( ANativeActivity* activity, int focused )
-{
-	LOGI( "NativeActivity window focus changed: %p -- %d\n", activity, focused );
-
-	struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)activity->instance;
-
-	pthread_mutex_lock( &app_instance->mutex );
-
-	app_instance->msgQueue[ app_instance->msgQueueLength ].msg		= MSG_WINDOW_FOCUSCHANGED;
-	app_instance->msgQueue[ app_instance->msgQueueLength++ ].arg1	= focused;
-
-	pthread_mutex_unlock( &app_instance->mutex );
-}
-
-static
-void
-OnNativeWindowCreated( ANativeActivity* activity, ANativeWindow* window )
-{
-	LOGI( "NativeActivity native window created: %p -- %p\n", activity, window );
-	
-	struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)activity->instance;
-
-	pthread_mutex_lock( &app_instance->mutex );
-
-	app_instance->pendingWindow = window;
-	app_instance->msgQueue[ app_instance->msgQueueLength++ ].msg = MSG_WINDOW_CREATED;
-
-	while( app_instance->window != app_instance->pendingWindow )
-	{
-		pthread_cond_wait(&app_instance->cond, &app_instance->mutex);
-	}
-
-	app_instance->pendingWindow = NULL;
-
-	pthread_mutex_unlock( &app_instance->mutex );
-}
-
-static
-void
-OnNativeWindowDestroyed( ANativeActivity* activity, ANativeWindow* window )
-{
-	LOGI( "NativeActivity native window destroyed: %p -- %p\n", activity, window );
-
-	struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)activity->instance;
-
-	pthread_mutex_lock( &app_instance->mutex );
-
-	app_instance->pendingWindow = NULL;
-	app_instance->msgQueue[ app_instance->msgQueueLength++ ].msg = MSG_WINDOW_DESTROYED;
-
-	while( app_instance->window != app_instance->pendingWindow )
-	{
-		pthread_cond_wait(&app_instance->cond, &app_instance->mutex);
-	}
-
-	pthread_mutex_unlock( &app_instance->mutex );
-}
 
 static
 void
@@ -630,7 +420,7 @@ app_thread_entry( void* param )
 	struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)param;
 
 	app_instance->config = AConfiguration_new();
-	AConfiguration_fromAssetManager( app_instance->config, app_instance->activity->assetManager );
+	//AConfiguration_fromAssetManager( app_instance->config, app_instance->activity->assetManager );
 
 	//create/get a looper
 	ALooper* looper			= ALooper_prepare( ALOOPER_PREPARE_ALLOW_NON_CALLBACKS );
@@ -649,7 +439,7 @@ app_thread_entry( void* param )
 
 	pthread_mutex_lock( &app_instance->mutex );
 	
-	AConfiguration_delete(app_instance->config);
+	//AConfiguration_delete(app_instance->config);
 	
 	if( app_instance->inputQueue != NULL )
 	{
@@ -674,20 +464,21 @@ app_thread_entry( void* param )
 //
 static
 struct APP_INSTANCE*
-app_instance_create( ANativeActivity* activity, void* saved_state, size_t saved_state_size )
+app_instance_create( )
 {
+	LOGI("c instance start");
     struct APP_INSTANCE* app_instance = (struct APP_INSTANCE*)malloc( sizeof(struct APP_INSTANCE) );
     memset(app_instance, 0, sizeof(struct APP_INSTANCE));
-    app_instance->activity = activity;
-
+    //app_instance->activity = activity;
+	LOGI("c instance 1");
     pthread_mutex_init( &app_instance->mutex, NULL );
     pthread_cond_init( &app_instance->cond, NULL );
-
+	LOGI("c instance 2");
     pthread_attr_t attr; 
     pthread_attr_init( &attr );
     pthread_attr_setdetachstate( &attr, PTHREAD_CREATE_DETACHED );
     pthread_create( &app_instance->thread, &attr, app_thread_entry, app_instance );
-
+	LOGI("c instance 3");
     // Wait for thread to start.
     pthread_mutex_lock( &app_instance->mutex );
     while( !app_instance->running )
@@ -695,32 +486,11 @@ app_instance_create( ANativeActivity* activity, void* saved_state, size_t saved_
         pthread_cond_wait( &app_instance->cond, &app_instance->mutex );
     }
     pthread_mutex_unlock( &app_instance->mutex );
-
+	LOGI("c instance end");
     return app_instance;
 }
 
-//entry point from android/nativeactivity
-void
-ANativeActivity_onCreate( ANativeActivity* activity, void* saved_state, size_t saved_state_size )
-{
-	LOGI( "NativeActivity creating: %p\n", activity );
 
-	activity->callbacks->onDestroy					= OnDestroy;
-	activity->callbacks->onStart					= OnStart;
-	activity->callbacks->onResume					= OnResume;
-	activity->callbacks->onSaveInstanceState		= OnSaveInstanceState;
-	activity->callbacks->onPause					= OnPause;
-	activity->callbacks->onStop						= OnStop;
-	activity->callbacks->onConfigurationChanged		= OnConfigurationChanged;
-	activity->callbacks->onLowMemory				= OnLowMemory;
-	activity->callbacks->onWindowFocusChanged		= OnWindowFocusChanged;
-	activity->callbacks->onNativeWindowCreated		= OnNativeWindowCreated;
-	activity->callbacks->onNativeWindowDestroyed	= OnNativeWindowDestroyed;
-	activity->callbacks->onInputQueueCreated		= OnInputQueueCreated;
-	activity->callbacks->onInputQueueDestroyed		= OnInputQueueDestroyed;
-
-	activity->instance = app_instance_create( activity, saved_state, saved_state_size );
-}
 
 static
 int
@@ -735,6 +505,17 @@ JNIEXPORT jdouble JNICALL
 Java_com_sonyericsson_TouchpadNAJava_TouchpadNAActivity_TestLink(JNIEnv *env, jclass c1)
 {
 	return 420.0;
+}
+
+JNIEXPORT jdouble JNICALL 
+Java_com_sonyericsson_TouchpadNAJava_TouchpadNAActivity_StartInputQueue(JNIEnv *env, jclass c1)
+{
+	//activity->callbacks->onInputQueueCreated		= OnInputQueueCreated;
+	//activity->callbacks->onInputQueueDestroyed		= OnInputQueueDestroyed;
+	LOGI("c funct start");
+	app_instance_create();
+	LOGI("c funct end");
+	return 1.0;
 }
 
 

@@ -9,9 +9,13 @@ import android.app.Activity;
 import com.sonyericsson.TouchpadNAJava.TouchpadNAActivity;
 import java.io.StringWriter;
 import java.io.PrintWriter;
+import android.app.ActivityManager;
+import java.util.List;
+import android.content.Context;
 
 // Import the native functions declared in HelloNativeAndroid.java
 import static com.sonyericsson.TouchpadNAJava.TouchpadNAActivity.TestLink;
+import static com.sonyericsson.TouchpadNAJava.TouchpadNAActivity.StartInputQueue;
 import static com.sonyericsson.TouchpadNAJava.TouchpadNAActivity.GetPosX;
 import static com.sonyericsson.TouchpadNAJava.TouchpadNAActivity.GetPosY;
 
@@ -20,7 +24,7 @@ public class JTouchpadNAActivity extends RunnerActivity
 {
     public void JInit()
     {
-        Log.i("yoyo","Init function");
+        Log.i("yoyo","Init function ");
         
         try {
             //  Block of code to try
@@ -37,9 +41,26 @@ public class JTouchpadNAActivity extends RunnerActivity
         
         Log.i("yoyo","Created intent!!!!!!!!!!!");
     }
+
     public double JTestLink()
     {
         return TestLink();
+    }
+
+    public double JUpdateInputQueue()
+    {
+        try {
+            //  Block of code to try
+            StartInputQueue();
+        }
+        catch(Exception e) {
+            //  Block of code to handle errors
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            String exceptionAsString = sw.toString();
+            Log.i("yoyo",exceptionAsString);
+        }
+        return 1.0;
     }
 
     public double JGetLink()
